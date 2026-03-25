@@ -1,0 +1,70 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.venv/
+env/
+ENV/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE / Editor
+.vscode/
+.idea/
+
+# Python build files
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# SQLite
+*.sqlite3
+*.db
+
+# Temporary files
+*.tmp
+*.temp
+
+# Secrets / keys
+*.pem
+*.key
+*.crt
+
+# Node modules if any frontend tools are used
+node_modules/
+
+# Uploaded/generated files if not needed in repo
+uploads/
+temp/
+tmp/
+
+# Flask / FastAPI runtime files
+instance/
+
+# mypy / type checker
+.mypy_cache/
+
+# Ruff / lint cache
+.ruff_cache/
