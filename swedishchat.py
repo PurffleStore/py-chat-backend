@@ -1,4 +1,5 @@
-﻿"""
+
+"""
 Swedish AI Chat — Flask Backend
 ════════════════════════════════════════════════════════════════════════
 KB-Lab NLP Pipeline (4 automatic stages on every message):
