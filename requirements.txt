@@ -5,9 +5,10 @@ requests==2.31.0
 gunicorn==21.2.0
 
 # PyTorch (CPU version)
-torch==2.11.0
-torchvision==0.21.0
-torchaudio==2.11.0
+torch
+torchvision
+torchaudio
+
 
 # Hugging Face ecosystem
 transformers==4.36.2
