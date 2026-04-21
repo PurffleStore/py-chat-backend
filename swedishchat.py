@@ -1,5 +1,4 @@
-
-"""
+﻿"""
 Swedish AI Chat — Flask Backend
 ════════════════════════════════════════════════════════════════════════
 KB-Lab NLP Pipeline (4 automatic stages on every message):
@@ -239,6 +238,7 @@ def _reset_stop_event(sid: str) -> threading.Event:
 ALL_THREADS:   dict = {}
 SESSION_INDEX: dict = {}
 ACTIVE_THREAD: dict = {}
+USER_IMAGES:   dict = {}   # sid -> list[{id, b64, prompt_sv, prompt_en, created_at}]
 
 PERSIST_FILE = os.environ.get("THREAD_STORE_PATH",
                               os.path.join(os.path.dirname(__file__), "thread_store.json"))
@@ -251,6 +251,7 @@ def _persist_save() -> None:
         "all_threads":   ALL_THREADS,
         "session_index": SESSION_INDEX,
         "active_thread": ACTIVE_THREAD,
+        "user_images":   USER_IMAGES,
     }
     tmp = PERSIST_FILE + ".tmp"
     try:
@@ -264,7 +265,7 @@ def _persist_save() -> None:
 
 
 def _persist_load() -> None:
-    global ALL_THREADS, SESSION_INDEX, ACTIVE_THREAD
+    global ALL_THREADS, SESSION_INDEX, ACTIVE_THREAD, USER_IMAGES
     if not os.path.exists(PERSIST_FILE):
         logger.info(f"[Persist] No store file found at {PERSIST_FILE} — starting fresh")
         return
@@ -284,7 +285,8 @@ def _persist_load() -> None:
         ALL_THREADS   = valid
         SESSION_INDEX = data.get("session_index", {})
         ACTIVE_THREAD = data.get("active_thread", {})
-        logger.info(f"[Persist] Loaded {len(ALL_THREADS)} thread(s) from {PERSIST_FILE}")
+        USER_IMAGES   = data.get("user_images",   {})
+        logger.info(f"[Persist] Loaded {len(ALL_THREADS)} thread(s) and {sum(len(v) for v in USER_IMAGES.values())} image(s) from {PERSIST_FILE}")
     except Exception as e:
         logger.error(f"[Persist] Load failed ({e}) — starting with empty store")
 
@@ -2654,6 +2656,20 @@ def api_generate_image():
     result         = generate_image_diffusers(english_prompt, negative_prompt)
 
     if result["ok"]:
+        # ── Save to per-user image history ──────────────────────────────────
+        sid = _get_user_id()
+        import datetime as _dt
+        img_record = {
+            "id":         uuid.uuid4().hex,
+            "b64":        result["b64"],
+            "prompt_sv":  swedish_prompt,
+            "prompt_en":  english_prompt,
+            "created_at": _dt.datetime.utcnow().isoformat() + "Z",
+        }
+        USER_IMAGES.setdefault(sid, []).insert(0, img_record)
+        USER_IMAGES[sid] = USER_IMAGES[sid][:50]   # keep last 50 per user
+        _persist_save()                             # ← persist to disk immediately
+        # ────────────────────────────────────────────────────────────────────
         return jsonify({
             "ok":        True,
             "b64":       result["b64"],
@@ -2662,6 +2678,14 @@ def api_generate_image():
         })
     else:
         return jsonify({"ok": False, "error": result.get("error", "Okänt fel")}), 503
+
+
+@app.route("/api/my-images", methods=["GET"])
+def api_my_images():
+    """Return the current user's generated image history (newest first, max 50)."""
+    sid = _get_user_id()
+    images = USER_IMAGES.get(sid, [])
+    return jsonify({"images": images, "total": len(images)})
 
 
 # ════════════════════════════════════════════════════════════════════════
